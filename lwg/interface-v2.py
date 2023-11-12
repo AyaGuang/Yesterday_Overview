@@ -12,6 +12,7 @@ class all:
 # 视频类应该额外上传的数据
 class video:
     cover = str     #封面链接
+    #以下内容如果对应平台没有，请写空字符串
     duration = int  #视频总时长
     up = str        #视频制作者
 
