@@ -1,0 +1,65 @@
+import datetime
+import chardet
+import requests
+import pandas as pd
+import time
+import brotli
+url='https://www.douyin.com/aweme/v1/web/hot/search/list/?device_platform=webapp&aid=6383&channel=channel_pc_web&detail_list=1&source=6&board_type=0&board_sub_type=&pc_client_type=1&version_code=170400&version_name=17.4.0&cookie_enabled=true&screen_width=1494&screen_height=934&browser_language=zh-CN&browser_platform=Win32&browser_name=Chrome&browser_version=109.0.0.0&browser_online=true&engine_name=Blink&engine_version=109.0.0.0&os_name=Windows&os_version=10&cpu_core_num=8&device_memory=8&platform=PC&downlink=10&effective_type=4g&round_trip_time=150&webid=7284226028603737600&msToken=NOAbqL1pGqyLEsOY7W8-qGgdVGUcw-6cw7CVUuTyA8O3eU6Kit2o5Hu1_Zy86xXFFjPx2-3dxEk-DhOvpkbctVVhuLrK0XAt7XCXLxwNYB4Rgju10WhGZniqu_zVqs8=&X-Bogus=DFSzKwGuuXkANJJZtFmspe9WX7Jb'
+headers={
+    'user-agent':'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Mobile Safari/537.36',
+    'cookie':'passport_csrf_token=64336bd0e885903b3665c47b90610335; passport_csrf_token_default=64336bd0e885903b3665c47b90610335; s_v_web_id=verify_ln4la6gh_g7QVwfxF_UL62_4ALf_8EX1_VHqFrEA9vInt; ttwid=1%7CRuz2WkLTC3ABxp6duWSJY8Md1b4qJp7mK4nDQjxc8js%7C1696063907%7C171d8a9ed9076b5bbd79605971cdda9c7acd544c1f39323fa9c637507f980740; xgplayer_user_id=879866986124; passport_assist_user=CkFA5KXO0mbp1_m8SFZl7wDjcsuWsSo1p5NPncx3S7INpUGcXUgjnYm4u20VC57q7DUMBAOPceTOAVUj4I-V6UPMpBpKCjwoRjZiqGGDQqHQFyeJo7gYGrErKeCTvsvC32l3GNqBlQ1BDdSZp2x_IaUWxHNFKH9phJAg0KZNwc4z2RoQzqm9DRiJr9ZUIAEiAQOsWZsu; n_mh=4IKlPjPvnD0kmeI6H_ZzlNDLDGssOtSRnjCOV-lYNLI; sso_uid_tt=cef1c993c013d668ad19802838c0d4f7; sso_uid_tt_ss=cef1c993c013d668ad19802838c0d4f7; toutiao_sso_user=bc6091911a085375006ec004bf14b441; toutiao_sso_user_ss=bc6091911a085375006ec004bf14b441; LOGIN_STATUS=1; _bd_ticket_crypt_doamin=3; store-region=cn-fj; store-region-src=uid; _bd_ticket_crypt_cookie=57ce80eb29f0bea8b35fafd70b9a8952; __security_server_data_status=1; d_ticket=3a9b6a7ed81651cd576ccf25b7e5fcaae42dd; sid_ucp_v1=1.0.0-KDY5YmVkOGI2ZTk5MGJiYTk4NDNlNGFhZmNhYzhiNzMzZWU5N2ZkZTEKGwib4fCj8vWsBBDIv-CoBhjvMSAMOAZA9AdIBBoCbHEiIGNmMDlkZGJhOTg1ZDYxOWMzNGZjYzRhNWQ0YjExODQ5; ssid_ucp_v1=1.0.0-KDY5YmVkOGI2ZTk5MGJiYTk4NDNlNGFhZmNhYzhiNzMzZWU5N2ZkZTEKGwib4fCj8vWsBBDIv-CoBhjvMSAMOAZA9AdIBBoCbHEiIGNmMDlkZGJhOTg1ZDYxOWMzNGZjYzRhNWQ0YjExODQ5; __live_version__=%221.1.1.4374%22; douyin.com; device_web_cpu_core=8; device_web_memory_size=8; architecture=amd64; webcast_local_quality=null; publish_badge_show_info=%220%2C0%2C0%2C1699689415769%22; strategyABtestKey=%221699689419.381%22; sid_ucp_sso_v1=1.0.0-KGEyYzI0YTRlNzJiZGU0ZGFmZTU5YTJhNjYyYTBhMzNjMmE0ZjlmOWUKHwib4fCj8vWsBBDL57yqBhjvMSAMMIWQyecFOAZA9AcaAmxmIiBiYzYwOTE5MTFhMDg1Mzc1MDA2ZWMwMDRiZjE0YjQ0MQ; ssid_ucp_sso_v1=1.0.0-KGEyYzI0YTRlNzJiZGU0ZGFmZTU5YTJhNjYyYTBhMzNjMmE0ZjlmOWUKHwib4fCj8vWsBBDL57yqBhjvMSAMMIWQyecFOAZA9AcaAmxmIiBiYzYwOTE5MTFhMDg1Mzc1MDA2ZWMwMDRiZjE0YjQ0MQ; sid_guard=bc6091911a085375006ec004bf14b441%7C1699689420%7C5184000%7CWed%2C+10-Jan-2024+07%3A57%3A00+GMT; uid_tt=cef1c993c013d668ad19802838c0d4f7; uid_tt_ss=cef1c993c013d668ad19802838c0d4f7; sid_tt=bc6091911a085375006ec004bf14b441; sessionid=bc6091911a085375006ec004bf14b441; sessionid_ss=bc6091911a085375006ec004bf14b441; csrf_session_id=4c81ce439d4a4304a809824253c22a25; __ac_signature=_02B4Z6wo00f01Q8OOUQAAIDBjwzDByOgydkPLj3AACaPTtoz.RwgFqzzMdpj37i6zW9d5UcwBUnAxUNvQxJKBU71aOqJ2GA4L8qlPndVdSPFXdfcqdHwciVdN9wCBWTNMTlU9N30o20fLuovfa; SEARCH_RESULT_LIST_TYPE=%22single%22; _tea_utm_cache_1243=undefined; MONITOR_WEB_ID=87433f86-4f0b-4146-99bf-8008d639a3b7; pwa2=%220%7C0%7C3%7C0%22; volume_info=%7B%22isUserMute%22%3Afalse%2C%22isMute%22%3Atrue%2C%22volume%22%3A0.741%7D; passport_fe_beating_status=true; FOLLOW_LIVE_POINT_INFO=%22MS4wLjABAAAACtBsgKWOc2fDPpozmo6NeJOQTXGz0s261bNDrlBS2kiZb4n1UAu3h_CmPN4Tv3K3%2F1699718400000%2F0%2F0%2F1699695345452%22; stream_recommend_feed_params=%22%7B%5C%22cookie_enabled%5C%22%3Atrue%2C%5C%22screen_width%5C%22%3A1494%2C%5C%22screen_height%5C%22%3A934%2C%5C%22browser_online%5C%22%3Atrue%2C%5C%22cpu_core_num%5C%22%3A8%2C%5C%22device_memory%5C%22%3A8%2C%5C%22downlink%5C%22%3A10%2C%5C%22effective_type%5C%22%3A%5C%224g%5C%22%2C%5C%22round_trip_time%5C%22%3A150%7D%22; odin_tt=51b61f14dcff96075dad99da7b06a88670779d923f3838df4d03990adaff8e322602945e06de0ed292fb0ef480f9ddda4647a0e6c6f0310cdff271c84fb1fece; bd_ticket_guard_client_data=eyJiZC10aWNrZXQtZ3VhcmQtdmVyc2lvbiI6MiwiYmQtdGlja2V0LWd1YXJkLWl0ZXJhdGlvbi12ZXJzaW9uIjoxLCJiZC10aWNrZXQtZ3VhcmQtcmVlLXB1YmxpYy1rZXkiOiJCSVhLRFQ2ZVVCZWNrSWhsdHg2NzVneWVjaWFjaXpGZW4wbkZRYmFhTTJEU1I2K1JUWWEvdVJ6bUlLNE5XNUxKYzVRci9EL3JhaHp3TVZhT3gzekx3Vkk9IiwiYmQtdGlja2V0LWd1YXJkLXdlYi12ZXJzaW9uIjoxfQ%3D%3D; home_can_add_dy_2_desktop=%221%22; download_guide=%222%2F20231111%2F1%22; tt_scid=b8mUaVZ4.S12yW1fIIIhlkGnjpTA2rmajtrEZG0IlXxoLzUKpavopUvE1Ww2hZg302a1; FOLLOW_NUMBER_YELLOW_POINT_INFO=%22MS4wLjABAAAACtBsgKWOc2fDPpozmo6NeJOQTXGz0s261bNDrlBS2kiZb4n1UAu3h_CmPN4Tv3K3%2F1699718400000%2F1699695111053%2F1699694745455%2F0%22; VIDEO_FILTER_MEMO_SELECT=%7B%22expireTime%22%3A1700300138228%2C%22type%22%3A1%7D; msToken=hF8H7BlGwxT-qqvPdrj9XJONziWsJwbdJqi9va23rzsZ54WbupP3S6g9-M2LZBRbhh84XTXiEmekRSvimTQHr54W_Cvq2q2jQ0QRti8ls5_VaEtv-pfz0OS9GkdAPDw=; msToken=NOAbqL1pGqyLEsOY7W8-qGgdVGUcw-6cw7CVUuTyA8O3eU6Kit2o5Hu1_Zy86xXFFjPx2-3dxEk-DhOvpkbctVVhuLrK0XAt7XCXLxwNYB4Rgju10WhGZniqu_zVqs8=; IsDouyinActive=true',
+    'referer':'https://www.douyin.com/discover',
+    'accept':'application/json, text/plain, */*',
+    'accept-encoding':'gzip, deflate, br',
+    'accept-language':'zh-CN,zh;q=0.9',
+    'connection': 'keep-alive'
+}
+picture_url=[]#热搜封面图
+position_list = []  # 热搜排名
+title_list = []  # 热搜标题
+time_list = []  # 热搜时间
+hot_value_list = []  # 热度值
+hot_url = []  # 热搜链接
+res=requests.get(
+    url=url,
+    headers=headers
+)
+#print(res.text)
+json_data = res.json()
+data_list = json_data['data']['word_list']
+for data in data_list:
+        word_cover_data = data.get('word_cover', {})
+        one_picture_list=word_cover_data.get('url_list',[])
+        picture=one_picture_list[0] if one_picture_list else None
+        picture_url.append( picture )
+        title = data.get('word', '')  # 热搜标题
+        title_list.append(title)
+        position = data.get('position', 0)  # 热搜排名
+        position_list.append(position)
+        hot_value = data.get('hot_value', '')  # 热搜值
+        hot_value_list.append(hot_value)
+        event_time = data.get('event_time', '')  # 热搜时间戳
+        if event_time:
+            timestamp = float(event_time)
+            # 时间戳转时间
+            dt_object = datetime.datetime.fromtimestamp(timestamp)
+            formatted_date = dt_object.strftime("%Y-%m-%d %H:%M:%S")
+            time_list.append(formatted_date)
+        else:
+            time_list.append('')
+        hot_url.append('https://www.douyin.com/hot/' + data.get('sentence_id', ''))  # 热榜链接
+
+#del hot_url[0]
+df = pd.DataFrame(
+    {
+        '热搜排名': position_list,
+        '热搜标题': title_list,
+        '热搜时间': time_list,
+        '热度值': hot_value_list,
+        '热搜链接': hot_url,
+        '热搜封面': picture_url
+    }
+)
+# 保存结果到csv文件
+df.to_csv('抖音热搜.csv', index=False, encoding='utf_8_sig')
+
