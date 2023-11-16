@@ -1,5 +1,6 @@
 import requests
 from lxml import etree
+import pandas as pd
 
 url="https://tophub.today/n/KqndgxeLl9"
 headers={
@@ -23,12 +24,31 @@ def getfirsttext(list):
     except:
         return ""
 
-file=open("新微博热搜top50.txt",mode="w",encoding="utf-8")
+hot_info = {
+    'rank':[],
+    'title':[],
+    'src':[],
+    'cover':[],
+    'up':[],
+    'PageViews':[],
+    'comments':[]
+}
+# file=open("新微博热搜top50.txt",mode="w",encoding="utf-8")
 for tr in trs:
     id=getfirsttext(tr.xpath('./td[1]/text()'))[0:-1]
     title=getfirsttext(tr.xpath('./td[2]/a/text()'))
     play=getfirsttext(tr.xpath('./td[3]/text()'))
     link= "https://tophub.today"+getfirsttext(tr.xpath('./td[2]/a/@href'))
-    print(id,title,play,link)
-    file.write(str(id)+","+title+","+str(play)+","+link+"\n")
-file.close()
+    # hot_info.append((id,title,play,link))
+    print(id, title, play, link)
+    hot_info['rank'].append(id)
+    hot_info['title'].append(title)
+    hot_info['src'].append(link)
+    hot_info['cover'].append('')
+    hot_info['up'].append('')
+    hot_info['PageViews'].append('')
+    hot_info['comments'].append('')
+#     file.write(str(id)+","+title+","+str(play)+","+link+"\n")
+# file.close()
+save=pd.DataFrame(hot_info)
+save.to_csv("微博热搜top50.csv",index=False,encoding='utf_8_sig')
