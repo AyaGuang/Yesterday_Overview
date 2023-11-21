@@ -23,7 +23,7 @@ soup = BeautifulSoup(html, 'html.parser')
 # 查找所有的视频元素
 video_elements = soup.select('li.rank-item')
 # 提取视频的详细信息[排名，标题，视频链接，图片链接，作者名，播放量，评论数]
-videos_info = {
+hot_info = {
     'rank':[],
     'title':[],
     'src':[],
@@ -42,18 +42,18 @@ for elem in video_elements:
     auther=detail[0].text.strip()   # 作者名
     views=detail[1].text.strip()    # 播放量
     comments=detail[2].text.strip()  # 评论数
-    videos_info['rank'].append(rank)
-    videos_info['title'].append(title)
-    videos_info['src'].append(url)
-    videos_info['cover'].append(image_url)
-    videos_info['up'].append(auther)
-    videos_info['PageViews'].append(views)
-    videos_info['comments'].append(comments)
+    hot_info['rank'].append(rank)
+    hot_info['title'].append(title)
+    hot_info['src'].append(url)
+    hot_info['cover'].append(image_url)
+    hot_info['up'].append(auther)
+    hot_info['PageViews'].append(views)
+    hot_info['comments'].append(comments)
 
 
 # # 打印视频的信息
-# print(videos_info['rank'])
-# print(videos_info['title'])
+# print(hot_info['rank'])
+# print(hot_info['title'])
 
 
 
@@ -61,5 +61,5 @@ for elem in video_elements:
 driver.quit()
 
 #  写入csv文件
-save=pd.DataFrame(videos_info)
+save=pd.DataFrame(hot_info)
 save.to_csv("bilibili.csv",index=False,encoding='utf_8_sig')
