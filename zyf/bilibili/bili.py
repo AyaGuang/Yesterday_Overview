@@ -175,7 +175,7 @@ def scroll_to_bottom(driver):
     # 滚动次数过多，加载的数据过大，网页可能会因内存占用过大而崩溃。
     # 这里设置滚动次数为45次，最多收集到920条一级评论
     # 视频评论数 = 一级评论数 + 二级评论数，且存在虚标情况。经测试，滚动次数设为45次时，已完整爬取标称评论数为7443条的视频评论，共爬取到3581条评论。
-    MAX_SCROLL_COUNT = 1
+    MAX_SCROLL_COUNT = 3
     scroll_count = 0
 
     try:
@@ -217,81 +217,90 @@ def scroll_to_bottom(driver):
         last_height = new_height
         scroll_count += 1
         print(f'下滑滚动第{scroll_count}次 / 最大滚动{MAX_SCROLL_COUNT}次')
+def write_to_txt(video_id,content):
+    try:
+        with open(f'{video_id}.txt', mode='a', encoding='utf-8_sig', newline='') as f:
+            f.write(content)
+            f.write('\n')
+    except:
+        print("写入失败")
 
-def write_to_csv(video_id, index, level, parent_nickname, parent_user_id, nickname, user_id, content, time, likes):
-    file_exists = os.path.isfile(f'{video_id}.csv')
-    max_retries = 50
-    retries = 0
 
-    while retries < max_retries:
-        try:
-            with open(f'{video_id}.csv', mode='a', encoding='utf-8_sig', newline='') as csvfile:
-                fieldnames = ['编号', '隶属关系', '被评论者昵称', '被评论者ID', '昵称', '用户ID', '评论内容', '发布时间',
-                              '点赞数']
-                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+# def write_to_csv(video_id, index, level, parent_nickname, parent_user_id, nickname, user_id, content, time, likes):
+#     file_exists = os.path.isfile(f'{video_id}.csv')
+#     max_retries = 50
+#     retries = 0
+#
+#     while retries < max_retries:
+#         try:
+#             with open(f'{video_id}.csv', mode='a', encoding='utf-8_sig', newline='') as csvfile:
+#                 fieldnames = ['编号', '隶属关系', '被评论者昵称', '被评论者ID', '昵称', '用户ID', '评论内容', '发布时间',
+#                               '点赞数']
+#                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+#
+#                 if not file_exists:
+#                     writer.writeheader()
+#
+#                 writer.writerow({
+#                     '编号': index,
+#                     '隶属关系': level,
+#                     '被评论者昵称': parent_nickname,
+#                     '被评论者ID': parent_user_id,
+#                     '昵称': nickname,
+#                     '用户ID': user_id,
+#                     '评论内容': content,
+#                     '发布时间': time,
+#                     '点赞数': likes
+#                 })
+#             break  # 如果成功写入，跳出循环
+#         except PermissionError as e:
+#             retries += 1
+#             print(f"将爬取到的数据写入csv时，遇到权限错误Permission denied，文件可能被占用或无写入权限: {e}")
+#             print(f"等待10s后重试，将会重试50次... (尝试 {retries}/{max_retries})")
+#             time.sleep(10)  # 等待10秒后重试
+#     else:
+#         print("将爬取到的数据写入csv时遇到权限错误，且已达到最大重试次数50次，退出程序")
+#         sys.exit(1)
 
-                if not file_exists:
-                    writer.writeheader()
-
-                writer.writerow({
-                    '编号': index,
-                    '隶属关系': level,
-                    '被评论者昵称': parent_nickname,
-                    '被评论者ID': parent_user_id,
-                    '昵称': nickname,
-                    '用户ID': user_id,
-                    '评论内容': content,
-                    '发布时间': time,
-                    '点赞数': likes
-                })
-            break  # 如果成功写入，跳出循环
-        except PermissionError as e:
-            retries += 1
-            print(f"将爬取到的数据写入csv时，遇到权限错误Permission denied，文件可能被占用或无写入权限: {e}")
-            print(f"等待10s后重试，将会重试50次... (尝试 {retries}/{max_retries})")
-            time.sleep(10)  # 等待10秒后重试
-    else:
-        print("将爬取到的数据写入csv时遇到权限错误，且已达到最大重试次数50次，退出程序")
-        sys.exit(1)
-
-def extract_sub_reply(video_id, progress, first_level_nickname, first_level_user_id, driver):
-
-    i = progress["first_comment_index"]
-
-    sub_soup = BeautifulSoup(driver.page_source, "html.parser")
-    sub_all_reply_items = sub_soup.find_all("div", class_="reply-item")
-
-    if i >= len(sub_all_reply_items):
-        print(str(f'翻页爬取二级评论时获得的一级评论数与实际一级评论数不符，视频{video_id}可能存在异常'))
-        return
-
-    # 提取二级评论数据
-    sub_reply_list = sub_all_reply_items[i].find("div", class_="sub-reply-list")
-    if sub_reply_list:
-        for sub_reply_item in sub_reply_list.find_all("div", class_="sub-reply-item"):
-            try:
-                sub_reply_nickname = sub_reply_item.find("div", class_="sub-user-name").text
-                sub_reply_user_id = sub_reply_item.find("div", class_="sub-reply-avatar")["data-user-id"]
-                sub_reply_text = sub_reply_item.find("span", class_="reply-content").text
-                sub_reply_time = sub_reply_item.find("span", class_="sub-reply-time").text
-                try:
-                    sub_reply_likes = sub_reply_item.find("span", class_="sub-reply-like").find("span").text
-                except AttributeError:
-                    sub_reply_likes = 0
-
-                write_to_csv(video_id, index=i, level='二级评论', parent_nickname=first_level_nickname,
-                             parent_user_id=first_level_user_id,
-                             nickname=sub_reply_nickname, user_id=sub_reply_user_id, content=sub_reply_text, time=sub_reply_time,
-                             likes=sub_reply_likes)
-
-            except NoSuchElementException:
-                print("Error extracting sub-reply element, skipping...")
-
-        progress['sub_page'] += 1
-        save_progress(progress)
+# def extract_sub_reply(video_id, progress, first_level_nickname, first_level_user_id, driver):
+#
+#     i = progress["first_comment_index"]
+#
+#     sub_soup = BeautifulSoup(driver.page_source, "html.parser")
+#     sub_all_reply_items = sub_soup.find_all("div", class_="reply-item")
+#
+#     if i >= len(sub_all_reply_items):
+#         print(str(f'翻页爬取二级评论时获得的一级评论数与实际一级评论数不符，视频{video_id}可能存在异常'))
+#         return
+#
+#     # 提取二级评论数据
+#     sub_reply_list = sub_all_reply_items[i].find("div", class_="sub-reply-list")
+#     if sub_reply_list:
+#         for sub_reply_item in sub_reply_list.find_all("div", class_="sub-reply-item"):
+#             try:
+#                 sub_reply_nickname = sub_reply_item.find("div", class_="sub-user-name").text
+#                 sub_reply_user_id = sub_reply_item.find("div", class_="sub-reply-avatar")["data-user-id"]
+#                 sub_reply_text = sub_reply_item.find("span", class_="reply-content").text
+#                 sub_reply_time = sub_reply_item.find("span", class_="sub-reply-time").text
+#                 try:
+#                     sub_reply_likes = sub_reply_item.find("span", class_="sub-reply-like").find("span").text
+#                 except AttributeError:
+#                     sub_reply_likes = 0
+#
+#                 write_to_csv(video_id, index=i, level='二级评论', parent_nickname=first_level_nickname,
+#                              parent_user_id=first_level_user_id,
+#                              nickname=sub_reply_nickname, user_id=sub_reply_user_id, content=sub_reply_text, time=sub_reply_time,
+#                              likes=sub_reply_likes)
+#
+#
+#             except NoSuchElementException:
+#                 print("Error extracting sub-reply element, skipping...")
+#
+#         progress['sub_page'] += 1
+#         save_progress(progress)
 
 def main():
-    # global temp_dir
+    global temp_dir
     # 代码文件所在的文件夹内创建一个新的文件夹，作为缓存目录。如果想自行设定目录，请修改下面代码
     current_folder = os.path.dirname(os.path.abspath(r'C:\Users\陌冼\Desktop\软工\团队项目\β冲刺\代码\bilibili\buffer'))
     temp_dir = tempfile.mkdtemp(dir=current_folder)
@@ -317,8 +326,8 @@ def main():
     chrome_options.add_argument("--mute-audio")
     chrome_options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
     chrome_options.add_argument("--incognito")
-    # 禁用GPU加速，避免浏览器崩溃
-    chrome_options.add_argument("--disable-gpu")
+    # # 禁用GPU加速，避免浏览器崩溃
+    # chrome_options.add_argument("--disable-gpu")
     driver = webdriver.Chrome(service=Service(executable_path=ChromeDriverManager().install()), options=chrome_options)
     driver.get('https://space.bilibili.com/')
     load_cookies(driver, cookies_file)
@@ -377,33 +386,39 @@ def main():
                 if(i < progress["first_comment_index"]):
                     continue
 
-                first_level_nickname_element = reply_item.find("div", class_="user-name")
-                first_level_nickname = first_level_nickname_element.text if first_level_nickname_element is not None else ''
-
-                first_level_user_id_element = reply_item.find("div", class_="root-reply-avatar")
-                first_level_user_id = first_level_user_id_element[
-                    "data-user-id"] if first_level_user_id_element is not None else ''
+                # first_level_nickname_element = reply_item.find("div", class_="user-name")
+                # first_level_nickname = first_level_nickname_element.text if first_level_nickname_element is not None else ''
+                #
+                # first_level_user_id_element = reply_item.find("div", class_="root-reply-avatar")
+                # first_level_user_id = first_level_user_id_element[
+                #     "data-user-id"] if first_level_user_id_element is not None else ''
 
                 first_level_content_element = reply_item.find("span", class_="reply-content")
                 first_level_content = first_level_content_element.text if first_level_content_element is not None else ''
+                print('first_l_c:'+first_level_content)
 
-                first_level_time_element = reply_item.find("span", class_="reply-time")
-                first_level_time = first_level_time_element.text if first_level_time_element is not None else ''
+                # first_level_time_element = reply_item.find("span", class_="reply-time")
+                # first_level_time = first_level_time_element.text if first_level_time_element is not None else ''
 
-                try:
-                    first_level_likes = reply_item.find("span", class_="reply-like").find("span").text
-                except AttributeError:
-                    first_level_likes = 0
+                # try:
+                #     first_level_likes = reply_item.find("span", class_="reply-like").find("span").text
+                # except AttributeError:
+                #     first_level_likes = 0
 
-                if (progress["write_parent"] == 0):
-                    write_to_csv(video_id, index=i, level='一级评论', parent_nickname='up主', parent_user_id='up主',
-                                 nickname=first_level_nickname, user_id=first_level_user_id, content=first_level_content,
-                                 time=first_level_time, likes=first_level_likes)
-                    progress["write_parent"] = 1
-                    print(
-                        f'第{progress["video_count"] + 1}个视频{video_id}-第{progress["first_comment_index"] + 1}个一级评论已写入csv。正在查看这个一级评论有没有二级评论')
+                # if (progress["write_parent"] == 0):
+                #     write_to_csv(video_id, index=i, level='一级评论', parent_nickname='up主', parent_user_id='up主',
+                #                  nickname=first_level_nickname, user_id=first_level_user_id, content=first_level_content,
+                #                  time=first_level_time, likes=first_level_likes)
+                #     # progress["write_parent"] = 1
+                #     print(
+                #         f'第{progress["video_count"] + 1}个视频{video_id}-第{progress["first_comment_index"] + 1}个一级评论已写入csv。正在查看这个一级评论有没有二级评论')
 
                 view_more_buttons = driver.find_elements(By.XPATH, f".//div[@class='reply-item'][{i+1}]//span[@class='view-more-btn']")
+                if (progress["write_parent"] == 0):
+                    write_to_txt(video_id,content=first_level_content)
+                    print(
+                        f'第{progress["video_count"] + 1}个视频{video_id}-第{progress["first_comment_index"] + 1}个一级评论已写入txt')
+
 
                 clicked_view_more = False
                 if len(view_more_buttons) > 0:
@@ -416,39 +431,39 @@ def main():
                     except ElementClickInterceptedException:
                         print("查看全部 button is not clickable, skipping...")
 
-                if reply_item.find("div", class_="sub-reply-list"):
-                    extract_sub_reply(video_id, progress, first_level_nickname, first_level_user_id, driver)
-
+                # if reply_item.find("div", class_="sub-reply-list"):
+                #     extract_sub_reply(video_id, progress, first_level_nickname, first_level_user_id, driver)
+                #
                 # if clicked_view_more:
                 #     # 可以把max_sub_pages更改为您希望设置的最大二级评论页码数。
                 #     # 如果想无限制，请设为max_sub_pages = None。
                 #     # 设定一个上限有利于减少内存占用，避免页面崩溃。建议设为150。
-                #     max_sub_pages = 3
+                #     max_sub_pages = 0
                 #     current_sub_page = progress["sub_page"]
-                #
-                #     while max_sub_pages is None or current_sub_page < max_sub_pages:
-                #         next_buttons = driver.find_elements(By.CSS_SELECTOR, ".pagination-btn")
-                #         found_next_button = False
-                #
-                #         for button in next_buttons:
-                #             if "下一页" in button.text:
-                #                 button_xpath = f"//span[contains(text(), '下一页') and @class='{button.get_attribute('class')}']"
-                #                 WebDriverWait(driver, 30).until(EC.element_to_be_clickable((By.XPATH, button_xpath)))
-                #                 try:
-                #                     click_next_page(driver, button, i, progress)
-                #                     time.sleep(2)
-                #                     extract_sub_reply(video_id, progress, first_level_nickname, first_level_user_id,
-                #                                       driver)
-                #                     print(f'发现多页二级评论，正在翻页：二级评论已爬取到第{progress["sub_page"]}页')
-                #                     found_next_button = True
-                #                     current_sub_page += 1
-                #                     break
-                #                 except ElementClickInterceptedException:
-                #                     print("下一页按钮 is not clickable, skipping...")
-                #
-                #         if not found_next_button:
-                #             break
-                #
+
+                    # while max_sub_pages is None or current_sub_page < max_sub_pages:
+                    #     next_buttons = driver.find_elements(By.CSS_SELECTOR, ".pagination-btn")
+                    #     found_next_button = False
+                    #
+                    #     for button in next_buttons:
+                    #         if "下一页" in button.text:
+                    #             button_xpath = f"//span[contains(text(), '下一页') and @class='{button.get_attribute('class')}']"
+                    #             WebDriverWait(driver, 30).until(EC.element_to_be_clickable((By.XPATH, button_xpath)))
+                    #             try:
+                    #                 click_next_page(driver, button, i, progress)
+                    #                 time.sleep(2)
+                    #                 extract_sub_reply(video_id, progress, first_level_nickname, first_level_user_id,
+                    #                                   driver)
+                    #                 print(f'发现多页二级评论，正在翻页：二级评论已爬取到第{progress["sub_page"]}页')
+                    #                 found_next_button = True
+                    #                 current_sub_page += 1
+                    #                 break
+                    #             except ElementClickInterceptedException:
+                    #                 print("下一页按钮 is not clickable, skipping...")
+                    #
+                    #     if not found_next_button:
+                    #         break
+
                 # print(f'第{progress["video_count"]+1}个视频{video_id}-第{progress["first_comment_index"]+1}个一级评论下的全部内容已完成爬取')
 
                 progress["first_comment_index"] += 1
