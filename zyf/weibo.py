@@ -38,7 +38,8 @@ for tr in trs:
     id=getfirsttext(tr.xpath('./td[1]/text()'))[0:-1]
     title=getfirsttext(tr.xpath('./td[2]/a/text()'))
     play=getfirsttext(tr.xpath('./td[3]/text()'))
-    link= "https://tophub.today"+getfirsttext(tr.xpath('./td[2]/a/@href'))
+    # link= "https://tophub.today"+getfirsttext(tr.xpath('./td[2]/a/@href'))
+    link= "https://s.weibo.com/weibo?q="+title
     # hot_info.append((id,title,play,link))
     print(id, title, play, link)
     hot_info['rank'].append(id)
@@ -51,4 +52,4 @@ for tr in trs:
 #     file.write(str(id)+","+title+","+str(play)+","+link+"\n")
 # file.close()
 save=pd.DataFrame(hot_info)
-save.to_csv("微博热搜top50.csv",index=False,encoding='utf_8_sig')
+save.to_csv("./微博热搜top50.csv",index=False,encoding='utf_8_sig')
