@@ -1,0 +1,68 @@
+import re
+from datetime import datetime
+import csv
+import requests
+appType = 9
+url = "https://www.kuaishou.com/?isHome=1"
+headers = {
+'User-Agent':
+'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
+}
+resp = requests.get(url, headers=headers)
+resp.encoding = 'utf-8'
+html = resp.text
+#print(html)
+title_list = re.findall(f'"id":"VisionHotRankItem:(.*?)",', html)
+# 只有热度没有浏览量
+hot_value = re.findall(f'"hotValue":"(.*?)",', html)
+# 爬取每个clientCacheKey
+CacheKeys = re.findall(f'"photoIds":.*?:\["(.*?)"', html)
+# 组合出url
+urls = []
+authors = []
+headers1 = {
+'Cookie':
+'kpf=PC_WEB; clientid=3; did=web_f550145d8c56e1c044fb2ac13ff6e98b; kpn=KUAISHOU_VISION',
+'User-Agent':
+'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0'
+}
+for index, CacheKey in enumerate(CacheKeys):
+    url = f'https://www.kuaishou.com/short-video/{CacheKey}?streamSource=hotrank&trendingId={title_list[index]}'
+    urls.append(url)
+    print(index+1, "url:", url)
+for index, url in enumerate(urls):
+    resp1 = requests.get(url, headers=headers1)
+    html1 = resp1.text
+    print(html1)
+    x = re.search(f'<span class="profile-user-name-title" data-v-09c1df08> (.*?) </span>', html1, re.S)
+    author = x.group(1)
+    authors.append(author)
+    print(index+1, author)
+    resp1.close()
+for index, title in enumerate(title_list):
+    print(index+1, title)
+for index, hot in enumerate(hot_value):
+    print(index+1, hot)
+resp.close()
+# datetime = datetime.now()
+# data = {
+#     'title': title_list,
+#     'PageView': ["没数据" for i in range(51)],
+#     'appType': [7 for i in range(51)],
+#     'beief': ['null' for i in range(51)],
+#     'data': [datetime for i in range(51)],
+#     'src': urls,
+#     'Redirect': [2 for i in range(51)],
+#     'rank': [i+1 for i in range(51)],
+#     'cover': ["null" for i in range (51)],
+#     'up': authors,
+#     '热度': hot_value
+# }
+# headers0 = list(data.keys())
+# rows = zip(*data.values())
+# data_length = len(title_list)
+# with open('kuaishou.csv', 'w', newline='',encoding='utf-8') as file:
+#     writer = csv.writer(file)
+#     writer.writerow(headers0)
+#     writer.writerows(rows)
+# file.close()
