@@ -1,0 +1,73 @@
+import requests
+import re
+import csv
+from datetime import datetime
+import kuaishou
+def callback(next_str_value="", contents=[], i = 0, path = 0):
+    headers = {
+    'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Cookie':'kpf=PC_WEB; clientid=3; did=web_38936e78c0edac4579d5bace55156de1; ktrace-context=1|MS43NjQ1ODM2OTgyODY2OTgyLjM1Njk2MTY0LjE3MDI4MDUyNTIzMTkuNjUwMjA4|MS43NjQ1ODM2OTgyODY2OTgyLjkxNTU0NjY2LjE3MDI4MDUyNTIzMTkuNjUwMjA5|0|graphql-server|webservice|false|NA; kpn=KUAISHOU_VISION',
+    }
+    url = "https://www.kuaishou.com/graphql"
+    data = {
+    'operationName'
+    :
+    "commentListQuery",
+    'query'
+    :
+    "query commentListQuery($photoId: String, $pcursor: String) {\n  visionCommentList(photoId: $photoId, pcursor: $pcursor) {\n    commentCount\n    pcursor\n    rootComments {\n      commentId\n      authorId\n      authorName\n      content\n      headurl\n      timestamp\n      likedCount\n      realLikedCount\n      liked\n      status\n      authorLiked\n      subCommentCount\n      subCommentsPcursor\n      subComments {\n        commentId\n        authorId\n        authorName\n        content\n        headurl\n        timestamp\n        likedCount\n        realLikedCount\n        liked\n        status\n        authorLiked\n        replyToUserName\n        replyTo\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n",
+    'variables': {
+        'photoId': "3x6ghqucfkjhs7c",
+        'pcursor': next_str_value}
+    }
+    resp = requests.post(url=url, headers=headers, json=data)
+    rejson = resp.json()
+    print(rejson)
+    try:
+        root_comments = rejson["data"]["visionCommentList"]["rootComments"]
+        next_pcursor = str(rejson["data"]["visionCommentList"]["pcursor"])
+    except:
+        print(f"第{i}组评论爬取成功")
+        return
+    if next_pcursor == "no_more" or path >= 10:
+        print(f"第{i}组评论爬取成功")
+        return
+    print(f"第{i}组评论爬取中.......")
+    content = [comment["content"] for comment in root_comments]
+    print(content)
+    contents.append(content)
+    path = path + 1
+    callback(next_pcursor, contents, i, path)
+
+if __name__ == "__main__":
+    title_list = kuaishou.title_list
+    urls = kuaishou.urls
+    authors = kuaishou.authors
+    hot_value = kuaishou.hot_value
+    contentss = [[i] for i in range(55)]
+    for i in range(45):
+            callback("",contentss[i], i+1, 0)
+#   print(contentss[0])
+    datetime = datetime.now()
+    data = {
+        'title': title_list,
+        'PageView': ["没数据" for i in range(51)],
+        'appType': [7 for i in range(51)],
+        'beief': ['null' for i in range(51)],
+        'data': [datetime for i in range(51)],
+        'src': urls,
+        'Redirect': [2 for i in range(51)],
+        'rank': [i+1 for i in range(51)],
+        'cover': ["null" for i in range (51)],
+        'up': authors,
+        '热度': hot_value,
+        'comment': contentss
+    }
+    headers0 = list(data.keys())
+    rows = zip(*data.values())
+    data_length = len(title_list)
+    with open('kuaishou.csv', 'w', newline='',encoding='utf-8') as file:
+        writer = csv.writer(file)
+        writer.writerow(headers0)
+        writer.writerows(rows)
+    file.close()
